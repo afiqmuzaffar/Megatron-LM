@@ -29,8 +29,7 @@ def model_provider():
     print_rank_0("building VIT model ...")
     args = get_args()
 
-    model = VitModel(num_classes=args.num_classes)
-    return model
+    return VitModel(num_classes=args.num_classes)
 
 def get_batch(data_iterator):
     """Build the batch."""

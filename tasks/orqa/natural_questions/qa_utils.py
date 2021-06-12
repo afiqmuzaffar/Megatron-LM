@@ -126,7 +126,7 @@ def has_answer(answers, text, tokenizer, match_type) -> bool:
             single_answer = tokenizer.tokenize(single_answer)
             single_answer = single_answer.words(uncased=True)
 
-            for i in range(0, len(text) - len(single_answer) + 1):
+            for i in range(len(text) - len(single_answer) + 1):
                 if single_answer == text[i: i + len(single_answer)]:
                     return True
 

@@ -155,10 +155,7 @@ def get_ltor_masks_and_position_ids(data,
     micro_batch_size, seq_length = data.size()
 
     # Attention mask (lower triangular).
-    if reset_attention_mask:
-        att_mask_batch = micro_batch_size
-    else:
-        att_mask_batch = 1
+    att_mask_batch = micro_batch_size if reset_attention_mask else 1
     attention_mask = torch.tril(torch.ones(
         (att_mask_batch, seq_length, seq_length), device=data.device)).view(
             att_mask_batch, 1, seq_length, seq_length)

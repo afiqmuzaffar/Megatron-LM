@@ -230,12 +230,21 @@ def get_model(model_provider_func):
 
     # Print number of parameters.
     if mpu.get_data_parallel_rank() == 0:
-        print(' > number of parameters on (tensor, pipeline) '
-              'model parallel rank ({}, {}): {}'.format(
-            mpu.get_tensor_model_parallel_rank(),
-            mpu.get_pipeline_model_parallel_rank(),
-            sum([sum([p.nelement() for p in model_module.parameters()])
-                 for model_module in model])), flush=True)
+        print(
+            (
+                ' > number of parameters on (tensor, pipeline) '
+                'model parallel rank ({}, {}): {}'.format(
+                    mpu.get_tensor_model_parallel_rank(),
+                    mpu.get_pipeline_model_parallel_rank(),
+                    sum(
+                        sum(p.nelement() for p in model_module.parameters())
+                        for model_module in model
+                    ),
+                )
+            ),
+            flush=True,
+        )
+
 
     # GPU allocation.
     for model_module in model:
@@ -293,7 +302,7 @@ def get_learning_rate_scheduler(optimizer):
         raise Exception(
             'either train-iters or train-samples should be provided.')
 
-    lr_scheduler = AnnealingLR(
+    return AnnealingLR(
         optimizer,
         max_lr=args.lr,
         min_lr=args.min_lr,
@@ -302,8 +311,6 @@ def get_learning_rate_scheduler(optimizer):
         decay_style=args.lr_decay_style,
         use_checkpoint_lr_scheduler=args.use_checkpoint_lr_scheduler,
         override_lr_scheduler=args.override_lr_scheduler)
-
-    return lr_scheduler
 
 
 def setup_model_and_optimizer(model_provider_func):
@@ -698,9 +705,7 @@ def evaluate(forward_step_func, data_iterator, model, verbose=False):
     total_loss_dict = {}
 
     with torch.no_grad():
-        iteration = 0
-        while iteration < args.eval_iters:
-            iteration += 1
+        for iteration in range(1, args.eval_iters + 1):
             if verbose and iteration % args.log_interval == 0:
                 print_rank_0('Evaluating iter {}/{}'.format(iteration,
                                                             args.eval_iters))
@@ -730,8 +735,8 @@ def evaluate(forward_step_func, data_iterator, model, verbose=False):
     for model_module in model:
         model_module.train()
 
-    for key in total_loss_dict:
-        total_loss_dict[key] /= args.eval_iters * get_num_microbatches()
+    for key, value in total_loss_dict.items():
+        value /= args.eval_iters * get_num_microbatches()
 
     return total_loss_dict
 
@@ -769,8 +774,7 @@ def evaluate_and_print_results(prefix, forward_step_func,
 
 def cyclic_iter(iter):
     while True:
-        for x in iter:
-            yield x
+        yield from iter
 
 def build_train_valid_test_data_iterators(
         build_train_valid_test_datasets_provider):

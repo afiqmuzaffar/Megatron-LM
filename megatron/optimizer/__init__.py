@@ -84,16 +84,14 @@ def get_megatron_optimizer(model):
         # Constant loss scale.
         if args.loss_scale:
             grad_scaler = ConstantGradScaler(args.loss_scale)
-        # Dynamic loss scale.
-        else:
-            if args.fp16:
-                grad_scaler = DynamicGradScaler(
-                    initial_scale=args.initial_loss_scale,
-                    min_scale=args.min_loss_scale,
-                    growth_factor=2.0,
-                    backoff_factor=0.5,
-                    growth_interval=args.loss_scale_window,
-                    hysteresis=args.hysteresis)
+        elif args.fp16:
+            grad_scaler = DynamicGradScaler(
+                initial_scale=args.initial_loss_scale,
+                min_scale=args.min_loss_scale,
+                growth_factor=2.0,
+                backoff_factor=0.5,
+                growth_interval=args.loss_scale_window,
+                hysteresis=args.hysteresis)
 
         # Megatron optimizer.
         return Float16OptimizerWithFloat16Params(optimizer,

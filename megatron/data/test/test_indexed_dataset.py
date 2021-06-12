@@ -23,8 +23,7 @@ def test_indexed_dataset(args):
     if ds.supports_prefetch:
         # just prefetch the whole thing in test (so assume it is small)
         ds.prefetch(range(len(ds)))
-    if args.count > len(ds.doc_idx) - 1:
-        args.count = len(ds.doc_idx) - 1
+    args.count = min(args.count, len(ds.doc_idx) - 1)
 
     for i in range(args.count):
         start = ds.doc_idx[i]

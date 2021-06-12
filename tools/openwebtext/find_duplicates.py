@@ -25,8 +25,7 @@ import sys
 # This function is adapted from:
 #   https://github.com/mattilyra/LSH/blob/master/examples/Introduction.ipynb
 def shingles(text, char_ngram=5):
-    return set(text[head:head + char_ngram]
-               for head in range(0, len(text) - char_ngram))
+    return {text[head:head + char_ngram] for head in range(len(text) - char_ngram)}
 
 
 # This function is adapted from:
@@ -74,20 +73,18 @@ if __name__ == '__main__':
         for count_fp, fp_file_name in enumerate(args.load_fingerprints):
             print("Loading fingerprints from pickle file {}".format(
                 fp_file_name), flush=True)
-            fp = open(fp_file_name, "rb")
-            if count_fp == 0:
-                # assign directory for the first pkl
-                lshcache = pickle.load(fp)
-                url_doc = pickle.load(fp)
-            else:
-                # append these to lshcache and url_doc
-                local_lshcache = pickle.load(fp)
-                local_url_doc = pickle.load(fp)
-                for url in local_lshcache.fingerprints.keys():
-                    url_doc[url] = local_url_doc[url]
-                    lshcache.add_fingerprint(local_lshcache.fingerprints[url], url)
-            fp.close()
-
+            with open(fp_file_name, "rb") as fp:
+                if count_fp == 0:
+                    # assign directory for the first pkl
+                    lshcache = pickle.load(fp)
+                    url_doc = pickle.load(fp)
+                else:
+                    # append these to lshcache and url_doc
+                    local_lshcache = pickle.load(fp)
+                    local_url_doc = pickle.load(fp)
+                    for url in local_lshcache.fingerprints.keys():
+                        url_doc[url] = local_url_doc[url]
+                        lshcache.add_fingerprint(local_lshcache.fingerprints[url], url)
     counter = 0
     start_time = time.time()
 
@@ -130,35 +127,33 @@ if __name__ == '__main__':
     deduped = 0
     # compute jaccard index of the input texts and write to file if needed
     if args.output is not None:
-        f_out = open(args.output, 'wb')
-        for b in lshcache.bins:
-            for bucket_id in b:
-                if len(b[bucket_id]) > 1:
-                    items = list(b[bucket_id])
-                    main_url = items[0]
-                    main_dhingles = shingles(url_doc[main_url])
-                    remove_urls = []
-                    for i in range(1, len(items)):
-                        counter += 1
-                        other_url= items[i]
-                        other_shingles = shingles(url_doc[other_url])
-                        try:
-                            jaccard_sim = jaccard(main_dhingles, other_shingles)
-                        except Exception as e:
-                            print('Error:', e)
-                        if jaccard_sim > 0.5:
-                            remove_urls.append({other_url: jaccard_sim})
-                            deduped += 1
-                        if counter % 10000 == 0:
-                            print(' [write]> processed {} documents in {:.2f} '
-                                  'seoncds and deduped {} documents ...'.
-                                  format(counter, time.time() - start_time,
-                                         deduped), flush=True)
-                    if len(remove_urls) > 0:
-                        myjson = json.dumps({main_url: remove_urls},
-                                            ensure_ascii=False)
-                        f_out.write(myjson.encode('utf-8'))
-                        f_out.write('\n'.encode('utf-8'))
-        f_out.close()
-
+        with open(args.output, 'wb') as f_out:
+            for b in lshcache.bins:
+                for bucket_id in b:
+                    if len(b[bucket_id]) > 1:
+                        items = list(b[bucket_id])
+                        main_url = items[0]
+                        main_dhingles = shingles(url_doc[main_url])
+                        remove_urls = []
+                        for i in range(1, len(items)):
+                            counter += 1
+                            other_url= items[i]
+                            other_shingles = shingles(url_doc[other_url])
+                            try:
+                                jaccard_sim = jaccard(main_dhingles, other_shingles)
+                            except Exception as e:
+                                print('Error:', e)
+                            if jaccard_sim > 0.5:
+                                remove_urls.append({other_url: jaccard_sim})
+                                deduped += 1
+                            if counter % 10000 == 0:
+                                print(' [write]> processed {} documents in {:.2f} '
+                                      'seoncds and deduped {} documents ...'.
+                                      format(counter, time.time() - start_time,
+                                             deduped), flush=True)
+                        if remove_urls:
+                            myjson = json.dumps({main_url: remove_urls},
+                                                ensure_ascii=False)
+                            f_out.write(myjson.encode('utf-8'))
+                            f_out.write('\n'.encode('utf-8'))
     print('done :-)')

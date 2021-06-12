@@ -29,12 +29,11 @@ def get_open_retrieval_wiki_dataset():
     args = get_args()
     tokenizer = get_tokenizer()
 
-    dataset = OpenRetrievalEvidenceDataset('2018 Wikipedia from DPR codebase',
+    return OpenRetrievalEvidenceDataset('2018 Wikipedia from DPR codebase',
                                            'evidence',
                                            args.evidence_data_path,
                                            tokenizer,
                                            args.retriever_seq_length)
-    return dataset
 
 
 def get_open_retrieval_batch(data_iterator):
@@ -121,14 +120,13 @@ def build_sample(row_id, context_ids, context_types, context_pad_mask):
     context_types = np.array(context_types, dtype=np.int64)
     context_mask = make_attention_mask(context_ids, context_ids)
 
-    sample = ({
+    return ({
         'row_id': row_id,
         'context': context_ids,
         'context_mask': context_mask,
         'context_types': context_types,
         'context_pad_mask': context_pad_mask
     })
-    return sample
 
 
 class OpenRetrievalEvidenceDataset(ABC, Dataset):
@@ -166,11 +164,10 @@ class OpenRetrievalEvidenceDataset(ABC, Dataset):
             build_tokens_types_paddings_from_text(row, self.tokenizer, 
                 self.max_seq_length)
 
-        sample = build_sample(row['doc_id'],
+        return build_sample(row['doc_id'],
                               context_ids,
                               context_types,
                               context_pad_mask)
-        return sample
 
     @staticmethod
     def process_samples_from_single_path(filename):

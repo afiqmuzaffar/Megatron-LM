@@ -85,7 +85,7 @@ class Encoder(object):
                 sentence_ids = Encoder.tokenizer.tokenize(sentence)
                 if len(sentence_ids) > 0:
                     doc_ids.append(sentence_ids)
-            if len(doc_ids) > 0 and self.args.append_eod:
+            if doc_ids and self.args.append_eod:
                 doc_ids[-1].append(Encoder.tokenizer.eod)
             ids[key] = doc_ids
         return ids, len(json_line)
@@ -129,9 +129,11 @@ def get_args():
     args = parser.parse_args()
     args.keep_empty = False
 
-    if args.tokenizer_type.lower().startswith('bert'):
-        if not args.split_sentences:
-            print("Bert tokenizer detected, are you sure you don't want to split sentences?")
+    if (
+        args.tokenizer_type.lower().startswith('bert')
+        and not args.split_sentences
+    ):
+        print("Bert tokenizer detected, are you sure you don't want to split sentences?")
 
     # some default/dummy values for the tokenizer
     args.rank = 0
