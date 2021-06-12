@@ -27,17 +27,13 @@ def biencoder_model_provider(only_query_model=False,
 
     print_rank_0('building BiEncoderModel...')
 
-    # simpler to just keep using 2 tokentypes since
-    # the LM we initialize with has 2 tokentypes
-    model = BiEncoderModel(
+    return BiEncoderModel(
         num_tokentypes=2,
         parallel_output=False,
         only_query_model=only_query_model,
         only_context_model=only_context_model,
         biencoder_shared_query_context_model=\
             biencoder_shared_query_context_model)
-
-    return model
 
 
 class BiEncoderModel(MegatronModule):
@@ -102,10 +98,9 @@ class BiEncoderModel(MegatronModule):
     @staticmethod
     def embed_text(model, tokens, attention_mask, token_types):
         """Embed a batch of tokens using the model"""
-        logits = model(tokens,
+        return model(tokens,
                               attention_mask,
                               token_types)
-        return logits
 
     def state_dict_for_save_checkpoint(self, destination=None, \
         prefix='', keep_vars=False):
@@ -272,10 +267,11 @@ class PretrainedBertModel(MegatronModule):
         """For easy load when model is combined with other heads,
         add an extra key."""
 
-        state_dict_ = {}
-        state_dict_[self._language_model_key] \
-            = self.language_model.state_dict_for_save_checkpoint(
-            destination, prefix, keep_vars)
+        state_dict_ = {
+            self._language_model_key: self.language_model.state_dict_for_save_checkpoint(
+                destination, prefix, keep_vars
+            )
+        }
 
         if self.biencoder_projection_dim > 0:
             state_dict_[self._projection_enc_key] = \

@@ -89,16 +89,13 @@ def build_data_loader(dataset, micro_batch_size, num_workers, drop_last):
     sampler = torch.utils.data.distributed.DistributedSampler(
         dataset, num_replicas=world_size, rank=rank)
 
-    # Data loader. Note that batch size is the per GPU batch size.
-    data_loader = torch.utils.data.DataLoader(dataset,
+    return torch.utils.data.DataLoader(dataset,
                                               batch_size=micro_batch_size,
                                               sampler=sampler,
                                               shuffle=False,
                                               num_workers=num_workers,
                                               drop_last=drop_last,
                                               pin_memory=True)
-
-    return data_loader
 
 
 def _build_infinite_size_dataloader(dataloader):
@@ -285,9 +282,7 @@ def finetune(train_valid_datasets_provider, model_provider,
     if args.epochs > 0:
         _train(model, optimizer, lr_scheduler, forward_step,
                train_dataloader, valid_dataloader, end_of_epoch_callback)
-    # Or just evaluate.
-    else:
-        if end_of_epoch_callback is not None:
-            print_rank_0('evaluation only mode, setting epoch to -1')
-            end_of_epoch_callback(model, epoch=-1, output_predictions=True)
+    elif end_of_epoch_callback is not None:
+        print_rank_0('evaluation only mode, setting epoch to -1')
+        end_of_epoch_callback(model, epoch=-1, output_predictions=True)
     print_rank_0('done :-)')

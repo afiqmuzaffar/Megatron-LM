@@ -36,13 +36,11 @@ def build_sample(ids, types, paddings, label, unique_id):
     ids_np = np.array(ids, dtype=np.int64)
     types_np = np.array(types, dtype=np.int64)
     paddings_np = np.array(paddings, dtype=np.int64)
-    sample = ({'text': ids_np,
+    return ({'text': ids_np,
                'types': types_np,
                'padding_mask': paddings_np,
                'label': int(label),
                'uid': int(unique_id)})
-
-    return sample
 
 
 def build_tokens_types_paddings_from_text(text_a, text_b,

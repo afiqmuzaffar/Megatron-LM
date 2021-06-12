@@ -169,23 +169,25 @@ def generate_samples_input_from_file(model):
             for _, decode_tokens in enumerate(token_stream):
                 pass
 
-            if mpu.get_tensor_model_parallel_rank() == 0:
-                if mpu.is_pipeline_first_stage():
-                    os.system('clear')
-                    print("\nContext:", raw_text, flush=True)
+            if (
+                mpu.get_tensor_model_parallel_rank() == 0
+                and mpu.is_pipeline_first_stage()
+            ):
+                os.system('clear')
+                print("\nContext:", raw_text, flush=True)
 
-                    fname_out.write("\nContext:")
-                    fname_out.write(raw_text)
+                fname_out.write("\nContext:")
+                fname_out.write(raw_text)
 
-                    decode_tokens, _ = decode_tokens
-                    decode_tokens = decode_tokens[0].cpu().numpy().tolist()
-                    trim_decode_tokens = tokenizer.detokenize(
-                        decode_tokens)[raw_text_len:]
-                    print("\nMegatron-LM:", trim_decode_tokens, flush=True)
+                decode_tokens, _ = decode_tokens
+                decode_tokens = decode_tokens[0].cpu().numpy().tolist()
+                trim_decode_tokens = tokenizer.detokenize(
+                    decode_tokens)[raw_text_len:]
+                print("\nMegatron-LM:", trim_decode_tokens, flush=True)
 
-                    fname_out.write("\n\nMegatron-LM:")
-                    fname_out.write(trim_decode_tokens)
-                    fname_out.write("\n")
+                fname_out.write("\n\nMegatron-LM:")
+                fname_out.write(trim_decode_tokens)
+                fname_out.write("\n")
 
             raw_text = None
             context_count += 1
@@ -449,8 +451,7 @@ def sample_sequence_batch(model, context_tokens, context_lengths,
         tokens = context_tokens
         if maxlen is None:
             maxlen = args.seq_length - 1
-            if maxlen > (org_context_length + args.out_seq_length):
-                maxlen = org_context_length + args.out_seq_length
+            maxlen = min(maxlen, org_context_length + args.out_seq_length)
 
         lengths = torch.ones([batch_size]).long().cuda() * maxlen
 

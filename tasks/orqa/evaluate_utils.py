@@ -134,7 +134,7 @@ class ORQAEvaluator(object):
             if node_id == node:
                 device_start_rank = start_rank
                 group = node_group
-        
+
         input_ = torch.empty_like(query_tensor).copy_(query_tensor).detach_()
         tensor_list = [torch.empty_like(input_) for _ in range(device_count)]
         torch.distributed.all_gather(tensor_list, query_tensor, group=group)
@@ -164,9 +164,10 @@ class ORQAEvaluator(object):
         topkindex = torch.split(topkindex, len(query_tensor), dim=0)\
             [local_rank]
 
-        top_ids_and_scores = []
-        for darray, topkarray in zip(distance, topkindex):
-            top_ids_and_scores.append((topkarray.tolist(), darray.tolist()))
+        top_ids_and_scores = [
+            (topkarray.tolist(), darray.tolist())
+            for darray, topkarray in zip(distance, topkindex)
+        ]
 
         passages = self.evidence_dataset.id2text
         match_stats = calculate_matches(passages,

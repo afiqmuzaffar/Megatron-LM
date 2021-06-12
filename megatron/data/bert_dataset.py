@@ -234,7 +234,7 @@ def build_training_sample(sample,
         = pad_and_convert_to_numpy(tokens, tokentypes, masked_positions,
                                    masked_labels, pad_id, max_seq_length)
 
-    train_sample = {
+    return {
         'text': tokens_np,
         'types': tokentypes_np,
         'labels': labels_np,
@@ -242,5 +242,4 @@ def build_training_sample(sample,
         'loss_mask': loss_mask_np,
         'padding_mask': padding_mask_np,
         'truncated': int(truncated)}
-    return train_sample
 

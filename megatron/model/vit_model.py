@@ -106,7 +106,7 @@ def twod_interpolate_position_embeddings_hook(
             )
 
             input_param_grid = input_param_grid.half()
-            input_param_grid = input_param_grid.reshape((-1, gs_new * gs_new))
+            input_param_grid = input_param_grid.reshape((-1, gs_new**2))
             input_param_grid = input_param_grid.transpose(0, 1).contiguous()
 
             assert input_param_grid.shape[1] == hidden_size
@@ -202,9 +202,5 @@ class VitModel(MegatronModule):
         x = self.embedding_dropout(x)
         x = self.transformer(x, None)
 
-        if not self.finetune:
-            x = self.mlp_head(x)
-        else:
-            x = self.class_head(x[:, 0, :])
-
+        x = self.mlp_head(x) if not self.finetune else self.class_head(x[:, 0, :])
         return x

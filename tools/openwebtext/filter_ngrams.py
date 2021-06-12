@@ -48,14 +48,14 @@ def free_ngram(line, ngrams, ngram_size, filter_text_len,
         text_buf = []
 
     text_buf_ngram_free = []
-    while len(text_buf) > 0:
+    punctuations = ".!?"
+    while text_buf:
 
         # get the first one from the buffer
         text = text_buf.pop(0)
         words, positions = get_words(text)
-        
+
         not_ngram_free = True
-        punctuations = ".!?"
         # find n-grams
         for i in range(len(words) - ngram_size + 1):
             seq = " ".join(words[i:i+ngram_size])
@@ -65,18 +65,18 @@ def free_ngram(line, ngrams, ngram_size, filter_text_len,
                 # first part of the text
                 pos = positions[i] - split_window_each_size
                 text_first = ""
-                while pos > 0 and not text[pos] in punctuations:
+                while pos > 0 and text[pos] not in punctuations:
                     pos -= 1
                 if pos > 0:
                     text_first = text[0:pos+1]
                 pos = positions[i] + split_window_each_size
                 # last part of the text
                 text_second = ""
-                while pos < len(text) and not text[pos] in punctuations:
+                while pos < len(text) and text[pos] not in punctuations:
                     pos += 1
                 if pos + 1 < len(text):
                     text_second = text[pos+1:len(text)]
-                
+
                 # first part of ngrams free
                 if len(text_first) > filter_text_len:
                     text_buf_ngram_free.append(text_first)

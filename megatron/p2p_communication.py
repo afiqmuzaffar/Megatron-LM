@@ -104,7 +104,7 @@ def _communicate(tensor_send_next, tensor_send_prev, recv_prev, recv_next,
                 torch.distributed.irecv, tensor_recv_next,
                 mpu.get_pipeline_model_parallel_next_rank())
             ops.append(recv_next_op)
-        if len(ops) > 0:
+        if ops:
             reqs = torch.distributed.batch_isend_irecv(ops)
             for req in reqs:
                 req.wait()

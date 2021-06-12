@@ -33,12 +33,11 @@ def get_nq_dataset(qa_data, split):
     args = get_args()
     tokenizer = get_tokenizer()
 
-    dataset = NQDataset('Google NQ {} Split'.format(split),
+    return NQDataset('Google NQ {} Split'.format(split),
                         'Google Natural Questions',
                         qa_data,
                         tokenizer,
                         args.retriever_seq_length)
-    return dataset
 
 
 def process_nq_batch(batch):
@@ -90,12 +89,10 @@ def get_one_epoch_nq_dataloader(dataset, micro_batch_size=None):
                                  batch_size=micro_batch_size,
                                  drop_last=False)
 
-    # Data loader. Note that batch size is the per GPU batch size.
-    data_loader = CustomDataLoader(dataset,
+    return CustomDataLoader(dataset,
                                    batch_sampler=batch_sampler,
                                    num_workers=num_workers,
                                    pin_memory=True)
-    return data_loader
 
 
 def build_tokens_types_paddings_from_text(src_text, tokenizer, max_seq_length):
@@ -160,14 +157,13 @@ def build_sample(token_ids, token_types, num_tokens, reference):
     token_types = np.array(token_types, dtype=np.int64)
     token_mask = make_attention_mask(token_ids, token_ids)
 
-    sample = ({
+    return ({
         'token_ids': token_ids,
         'token_mask': token_mask,
         'token_types': token_types,
         'seq_len': num_tokens,
         'reference': reference
     })
-    return sample
 
 
 class NQDataset(ABC, Dataset):
@@ -199,11 +195,10 @@ class NQDataset(ABC, Dataset):
             build_tokens_types_paddings_from_text(raw_sample['question'],
                 self.tokenizer, self.max_seq_length)
 
-        sample = build_sample(ques_tokens,
+        return build_sample(ques_tokens,
                               tokentypes_enc,
                               num_tokens_ques,
                               raw_sample['answers'])
-        return sample
 
     @staticmethod
     def process_samples_from_single_path(filename):

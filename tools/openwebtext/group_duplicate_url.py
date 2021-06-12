@@ -73,18 +73,16 @@ if __name__ == '__main__':
     total_remove = 0
     total_remain = 0
     for urls in index_to_urls:
-        if urls is not None:
-            if len(urls) > 1:
-                total_remove += (len(urls) - 1)
-                total_remain += 1
+        if urls is not None and len(urls) > 1:
+            total_remove += (len(urls) - 1)
+            total_remain += 1
     print('out of {} urls, only {} are unique and {} should be removed'.format(
         total_remove+total_remain, total_remain, total_remove))
 
     with open(output, 'wb') as f:
         for i, urls in enumerate(index_to_urls):
-            if urls is not None:
-                if len(urls) > 1:
-                    myjson = json.dumps({str(i): list(urls)},
-                                        ensure_ascii=False)
-                    f.write(myjson.encode('utf-8'))
-                    f.write('\n'.encode('utf-8'))
+            if urls is not None and len(urls) > 1:
+                myjson = json.dumps({str(i): list(urls)},
+                                    ensure_ascii=False)
+                f.write(myjson.encode('utf-8'))
+                f.write('\n'.encode('utf-8'))

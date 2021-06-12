@@ -118,7 +118,7 @@ def forward_backward_no_pipelining(forward_step_func, data_iterator, model,
     losses_reduced = []
     input_tensor, output_tensor_grad = None, None
     with context_handler():
-        for i in range(get_num_microbatches() - 1):
+        for _ in range(get_num_microbatches() - 1):
             output_tensor = forward_step(forward_step_func, data_iterator, model,
                                          input_tensor, losses_reduced)
             if not forward_only:
@@ -191,10 +191,10 @@ def forward_backward_pipelining_with_interleaving(forward_step_func, data_iterat
         model_chunk_id = get_model_chunk_id(microbatch_id, forward=True)
         mpu.set_virtual_pipeline_model_parallel_rank(model_chunk_id)
 
-        if mpu.is_pipeline_first_stage():
-            if len(input_tensors[model_chunk_id]) == \
-                    len(output_tensors[model_chunk_id]):
-                input_tensors[model_chunk_id].append(None)
+        if mpu.is_pipeline_first_stage() and len(
+            input_tensors[model_chunk_id]
+        ) == len(output_tensors[model_chunk_id]):
+            input_tensors[model_chunk_id].append(None)
         input_tensor = input_tensors[model_chunk_id][-1]
         output_tensor = forward_step(forward_step_func,
                                      data_iterator[model_chunk_id],
@@ -211,19 +211,18 @@ def forward_backward_pipelining_with_interleaving(forward_step_func, data_iterat
         model_chunk_id = get_model_chunk_id(microbatch_id, forward=False)
         mpu.set_virtual_pipeline_model_parallel_rank(model_chunk_id)
 
-        if mpu.is_pipeline_last_stage():
-            if len(output_tensor_grads[model_chunk_id]) == 0:
-                output_tensor_grads[model_chunk_id].append(None)
+        if (
+            mpu.is_pipeline_last_stage()
+            and len(output_tensor_grads[model_chunk_id]) == 0
+        ):
+            output_tensor_grads[model_chunk_id].append(None)
         input_tensor = input_tensors[model_chunk_id].pop(0)
         output_tensor = output_tensors[model_chunk_id].pop(0)
         output_tensor_grad = output_tensor_grads[model_chunk_id].pop(0)
-        input_tensor_grad = \
-            backward_step(optimizer,
+        return backward_step(optimizer,
                           input_tensor,
                           output_tensor,
                           output_tensor_grad)
-
-        return input_tensor_grad
 
     # Run warmup forward passes.
     mpu.set_virtual_pipeline_model_parallel_rank(0)
@@ -385,7 +384,7 @@ def forward_backward_pipelining_without_interleaving(forward_step_func, data_ite
     losses_reduced = []
 
     # Run warmup forward passes.
-    for i in range(num_warmup_microbatches):
+    for _ in range(num_warmup_microbatches):
         input_tensor = p2p_communication.recv_forward(timers)
         output_tensor = forward_step(forward_step_func, data_iterator, model,
                                      input_tensor, losses_reduced)

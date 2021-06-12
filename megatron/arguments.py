@@ -97,15 +97,14 @@ def parse_args(extra_args_provider=None, defaults={},
         # For default to be valid, it should not be provided in the
         # arguments that are passed to the program. We check this by
         # ensuring the arg is set to None.
-        if getattr(args, key) is not None:
-            if args.rank == 0:
-                print('WARNING: overriding default arguments for {key}:{v} \
-                       with {key}:{v2}'.format(key=key, v=defaults[key],
-                                               v2=getattr(args, key)),
-                                               flush=True)
-        else:
+        if getattr(args, key) is None:
             setattr(args, key, defaults[key])
 
+        elif args.rank == 0:
+            print('WARNING: overriding default arguments for {key}:{v} \
+                       with {key}:{v2}'.format(key=key, v=defaults[key],
+                                           v2=getattr(args, key)),
+                                           flush=True)
     # Batch size.
     assert args.micro_batch_size is not None
     assert args.micro_batch_size > 0
@@ -153,7 +152,7 @@ def parse_args(extra_args_provider=None, defaults={},
     if args.accumulate_allreduce_grads_in_fp32:
         assert args.DDP_impl == 'local'
         args.use_contiguous_buffers_in_ddp = True
-        
+
     if args.dataloader_type is None:
         args.dataloader_type = 'single'
 
@@ -212,7 +211,7 @@ def parse_args(extra_args_provider=None, defaults={},
     else:
         assert args.encoder_seq_length is not None
         args.seq_length = args.encoder_seq_length
- 
+
     assert args.hidden_size % args.num_attention_heads == 0
     if args.seq_length is not None:
         assert args.max_position_embeddings >= args.seq_length
